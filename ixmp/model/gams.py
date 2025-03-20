@@ -86,9 +86,19 @@ class GAMSInfo:
             Path(temp_dir, "null.gms").write_text("$exit;")
 
             try:
-                # Execute this no-op file and capture stdout
+                gams_exec = os.getenv("GAMS_EXECUTABLE", "gams")
+                if os.name == "nt":
+                    import shutil  # get full path on windows
+                    found = shutil.which(gams_exec)
+                    if found:
+                        gams_exec = found
+                    else:
+                        gams_exec = "gams"
+                    cmd = f'{gams_exec} null.gms -LogOption=3'
+                else:
+                    cmd = [gams_exec, "null.gms", "-LogOption=3"]
                 output = check_output(
-                    ["gams", "null.gms", "-LogOption=3"],
+                    cmd,
                     shell=os.name == "nt",
                     cwd=temp_dir,
                     universal_newlines=True,
