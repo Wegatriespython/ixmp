@@ -86,23 +86,27 @@ class GAMSInfo:
             Path(temp_dir, "null.gms").write_text("$exit;")
 
             try:
+                import os, shutil
+                from subprocess import check_output
+
                 gams_exec = os.getenv("GAMS_EXECUTABLE", "gams")
+                # Always resolve the full path if available
+                gams_exec = shutil.which(gams_exec) or gams_exec
+
                 if os.name == "nt":
-                    import shutil  # get full path on windows
-                    found = shutil.which(gams_exec)
-                    if found:
-                        gams_exec = found
-                    else:
-                        gams_exec = "gams"
+                    # When using shell=True on Windows, construct a single string command
                     cmd = f'{gams_exec} null.gms -LogOption=3'
                 else:
+                    # On POSIX, use a list of arguments and shell=False
                     cmd = [gams_exec, "null.gms", "-LogOption=3"]
+
                 output = check_output(
                     cmd,
                     shell=os.name == "nt",
                     cwd=temp_dir,
                     universal_newlines=True,
                 )
+
             except FileNotFoundError as e:  # pragma: no cover
                 log.warning(f"{e}")
                 output = ""
